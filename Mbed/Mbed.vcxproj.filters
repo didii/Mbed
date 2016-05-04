@@ -36,6 +36,7 @@
     <ClInclude Include="Translator.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

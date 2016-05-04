@@ -116,9 +116,9 @@ void Interactor::ChannelQuestion() {
 }
 
 void Interactor::VoltageQuestion() {
-	//TODO: Change DAC value to Voltage
-	// Ask DAC value
-	std::cout << "Set DAC value to? ";
+	//TODO: Change DacValue value to Voltage
+	// Ask DacValue value
+	std::cout << "Set DacValue value to? ";
 	int value;
 	std::cin >> value;
 	// Check if std::cin failed
@@ -153,5 +153,5 @@ void Interactor::SetChannel(int ch) {
 }
 
 void Interactor::SetData(int data) {
-	_msgInfo.DAC = data;
+	_msgInfo.DacValue = data;
 }

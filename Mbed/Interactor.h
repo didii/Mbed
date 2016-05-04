@@ -16,7 +16,7 @@ private:
 
 	// The current state
 	EState _state;
-	// Highest DAC value possible
+	// Highest DacValue value possible
 	int maxDacValue;
 
 	// Contains message info
