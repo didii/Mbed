@@ -16,6 +16,9 @@
     <ClCompile Include="Translator.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Listener.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -36,7 +39,12 @@
     <ClInclude Include="Translator.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Utility.h" />
+    <ClInclude Include="Utility.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Listener.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

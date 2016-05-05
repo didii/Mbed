@@ -23,10 +23,10 @@ private:
 	Translator::MessageInfo _msgInfo;
 
 public:
-	Interactor();
-	~Interactor();
 
-	bool AskCommando();
+	Interactor();
+
+	bool AskQuestions();
 	std::string ToString() const;
 
 	void SetMaxDacValue(int16_t value);

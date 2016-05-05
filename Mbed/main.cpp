@@ -4,20 +4,60 @@
 #include "stdafx.h"
 #include "Interactor.h"
 #include "SerialPort.h"
+#include "Listener.h"
 #include "Translator.h"
 
-//#define RANDOM_TEST
-//#define BYTESHIFT_TEST
+#define PROGRAM
+#define RANDOM_TEST
+#define BYTESHIFT_TEST
 #define READ_EXISTING_TEST
 #define TRANSLATOR_TEST
-//#define CHAR_TEST
-
-//TODO: Create Formatter
+#define CHAR_TEST
 
 int main() {
 
-#ifdef RANDOM_TEST
+#ifdef PROGRAM
+	// Create connection to the COM _port
+	SerialPort port(L"COM3");
+	// Create the question master
+	Interactor interactor;
+	// Create a listener
+	Listener listener;
 
+	std::cout << "Connection established\n";
+
+	bool running = true;
+	while (running) {
+		// Start asking questions
+		if (!interactor.AskQuestions())
+			break;
+
+		std::cout << "Sending: " << interactor.ToString() << std::endl;
+
+		// Translate the CommandInfo to raw
+		int8_t* rawMsg;
+		int rawMsgSize;
+		Translator::Translate(interactor.GetCommandInfo(), &rawMsg, &rawMsgSize);
+
+		// Send the message
+		port.Write(rawMsg, rawMsgSize);
+
+		std::cout << "Message sent.\nWaiting for answer...\n";
+
+		// Wait for answer
+		if (listener.Listen(5000)) {
+			auto msg = listener.GetLastMessageInfo();
+			std::cout << "Message received!\n";
+		} else {
+			std::cout << "Got no message back :(\n";
+		}
+	}
+
+	std::cout << "Terminating program...";
+	return 0;
+#endif
+
+#ifdef RANDOM_TEST
 #endif
 
 #ifdef BYTESHIFT_TEST
@@ -35,18 +75,18 @@ int main() {
 
 
 #ifdef READ_EXISTING_TEST
-	// Try to open the port
-	std::cout << "Opening port...\n";
+	// Try to open the _port
+	std::cout << "Opening _port...\n";
 	SerialPort comm;
 	if (comm.OpenPort(L"COM3")) {
-		std::cerr << "Could not open port, exiting...";
+		std::cerr << "Could not open _port, exiting...";
 		return 0;
 	}
 
 	// Read all existing characters
 	std::cout << "Port opened, reading buffer...\n";
 	std::string buffer = "";
-	comm.ReadExisiting(buffer);
+	comm.ReadExisting(&buffer);
 	if (buffer.length() > 0)
 		std::cout << std::string(buffer);
 	else
@@ -56,7 +96,7 @@ int main() {
 	for (int i = 0; i < 10; i++) {
 		comm.Write("|");
 		Sleep(50);
-		comm.ReadExisiting(buffer);
+		comm.ReadExisting(&buffer);
 		if (buffer.length() > 0)
 			std::cout << std::string(buffer);
 		Sleep(450);
@@ -78,9 +118,7 @@ int main() {
 	std::cout << rawMsg << std::endl;
 
 	// Translate to string
-	std::string strMsg;
-	Translator::Translate(info, &strMsg);
-	std::cout << strMsg << std::endl;
+	std::cout << info.ToString() << std::endl;
 
 	// Translate back to MessageInfo
 	Translator::MessageInfo info2;
@@ -97,6 +135,9 @@ int main() {
 			break;
 		case Translator::MessageInfo::OPTION:
 			std::cout << "Option";
+			break;
+		case Translator::MessageInfo::ERR:
+			std::cout << "Error";
 			break;
 		default:
 			throw;

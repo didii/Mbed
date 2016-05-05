@@ -8,6 +8,7 @@
 #include "targetver.h"
 
 #include <exception>
+#include <ctime>
 #include <Windows.h>
 #include <stdio.h>
 #include <tchar.h>

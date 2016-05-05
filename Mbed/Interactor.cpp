@@ -6,7 +6,7 @@ Interactor::Interactor(): maxDacValue(4096) {
 	ResetValues();
 }
 
-bool Interactor::AskCommando() {
+bool Interactor::AskQuestions() {
 	ResetValues();
 	_state = ReadWrite;
 	while (_state != End) {
@@ -30,9 +30,7 @@ bool Interactor::AskCommando() {
 }
 
 std::string Interactor::ToString() const {
-	std::string result;
-	Translator::Translate(_msgInfo, &result);
-	return result;
+	return _msgInfo.ToString();
 }
 
 void Interactor::SetMaxDacValue(int16_t value) {

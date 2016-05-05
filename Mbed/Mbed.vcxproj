@@ -146,6 +146,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Listener.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Interactor.h" />
     <ClInclude Include="Nullable.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Listener.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="Interactor.cpp" />
     <ClCompile Include="main.cpp" />

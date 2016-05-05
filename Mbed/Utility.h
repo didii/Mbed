@@ -15,3 +15,9 @@ inline int ByteUnshift(const int8_t* frames, int numFrames, bool lowToHigh = fal
 		result += (frames[i] << 8 * (lowToHigh ? i : numFrames - i - 1));
 	return result;
 }
+
+inline void DeepCopy(const int8_t* const source, int size, int8_t** const dest) {
+	*dest = new int8_t[size];
+	for (int i = 0; i < size; i++)
+		(*dest)[i] = source[i];
+}

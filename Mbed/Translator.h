@@ -9,11 +9,13 @@ class Translator {
 public:
 	// All info the Command info should contain
 	struct MessageInfo {
-		enum ECommandType { NONE, READ, WRITE, OPTION } CommandType;
+		enum ECommandType { NONE, READ, WRITE, OPTION, ERR } CommandType;
 		int Channel;
 		int DacValue;
+		std::string ToString() const;
 	};
 
+	// Rules over how the command is structured
 	struct Rules {
 		static int    StartCharIndex;
 		static int8_t StartChar;
@@ -23,12 +25,14 @@ public:
 		static int8_t ReadChar;
 		static int8_t WriteChar;
 		static int8_t OptionChar;
+		static int8_t ErrorChar;
 		//static int    ChannelIndex;
 		static int    DataIndex;
 		static int    DataLength;
 
 		static int ReadCmdSize;
 		static int WriteCmdSize;
+		static int ErrorCmdSize;
 	};
 
 private:
@@ -37,12 +41,10 @@ private:
 	~Translator();
 
 public:
-	// Translate MessageInfo to raw int8_t*
+	// Translate MessageInfo to raw int8_t* (NULL terminated!)
 	static bool Translate(MessageInfo info, int8_t** const cmd, int* const cmdSize);
-	// Translate MessageInfo to readable string
-	static bool Translate(MessageInfo info, std::string* const msg);
 	// Translate raw int8_t* message to MessageInfo
-	static bool Translate(const int8_t* const cmd, int cmdSize, MessageInfo* const info);
+	static void Translate(const int8_t* const cmd, int cmdSize, MessageInfo* const info);
 };
 
 // Only used in Translate(const int8_t* const,int,MessageInfo*)
@@ -52,3 +54,8 @@ public:
 	TranslatorException(const char* const msg);
 	TranslatorException(const char* const msg, int value);
 };
+
+class TranslatorStartCharMissingException : public TranslatorException {};
+class TranslatorIncorrectSizeException : public TranslatorException {};
+class TranslatorMessageTooShortException : public TranslatorIncorrectSizeException {};
+class TranslatorMessageTooLongException : public TranslatorIncorrectSizeException {};
