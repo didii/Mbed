@@ -7,12 +7,16 @@
 #include "Listener.h"
 #include "Translator.h"
 
+// Define to run the actual program
 #define PROGRAM
-#define RANDOM_TEST
-#define BYTESHIFT_TEST
-#define READ_EXISTING_TEST
-#define TRANSLATOR_TEST
-#define CHAR_TEST
+// A random test to test stuff
+//#define RANDOM_TEST
+// Testing the ByteShift and ByteUnshift functions
+//#define BYTESHIFT_TEST
+// Testing the SerialPort::ReadExisting functions
+//#define READ_EXISTING_TEST
+// Testing the Translator class
+//#define TRANSLATOR_TEST
 
 int main() {
 
@@ -37,7 +41,7 @@ int main() {
 		// Translate the CommandInfo to raw
 		int8_t* rawMsg;
 		int rawMsgSize;
-		Translator::Translate(interactor.GetCommandInfo(), &rawMsg, &rawMsgSize);
+		Translator::Translate(interactor.GetMessageInfo(), &rawMsg, &rawMsgSize);
 
 		// Send the message
 		port.Write(rawMsg, rawMsgSize);
@@ -45,7 +49,7 @@ int main() {
 		std::cout << "Message sent.\nWaiting for answer...\n";
 
 		// Wait for answer
-		if (listener.Listen(5000)) {
+		if (listener.Listen(port, 5000)) {
 			auto msg = listener.GetLastMessageInfo();
 			std::cout << "Message received!\n";
 		} else {
@@ -143,13 +147,6 @@ int main() {
 			throw;
 	}
 	std::cout << ": " << info2.Channel << "(" << info2.DacValue << ")\n";
-#endif
-
-#ifdef CHAR_TEST
-	for (int i = 0; i < 256; i++)
-		std::cout << i << ": " << static_cast<char>(i) << std::endl;
-
-	std::cin.get();
 #endif
 	
 	return 0;

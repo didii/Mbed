@@ -1,6 +1,9 @@
 #include "stdafx.h"
 
 #pragma once
+
+// <Momenteel ongebruikt en zal waarschijnlijk ook zo blijven>
+// Nullable template class, allows null value for any non-nullable object
 template <typename T>
 class Nullable {
 	T _value;

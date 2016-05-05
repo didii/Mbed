@@ -2,40 +2,50 @@
 #include "Listener.h"
 
 Listener::Listener()
-	: _port(),
-	_info(),
+	:_info(),
 	_isNewMessageReceived(false),
 	_buffer(),
 	_currIndex(0) {}
 
-Listener::Listener(SerialPort port)
-	: _port(port),
-	_info(),
-	_isNewMessageReceived(false),
-	_buffer(),
-	_currIndex(0) {}
-
-bool Listener::Listen() {
+bool Listener::Listen(const SerialPort& port) {
+	// Start infinite loop
 	while (true) {
-		if (DoListen())
-			return true;
+		// Get a single character
+		if (DoListen(port))
+			return true; // New message was received
+		// Wait a bit to reduce load
 		Sleep(5);
 	}
 }
 
-bool Listener::Listen(clock_t timeOutMs) {
+bool Listener::Listen(const SerialPort& port, clock_t timeOutMs) {
+	// Save current time
 	clock_t startTime = clock();
+	// Start infinte loop
 	while (true) {
-		if (DoListen())
-			return true;
+		// Get a single character
+		if (DoListen(port))
+			return true; // New message was received
+		// Check if time-out was overdue
 		if ((clock() - startTime) / CLOCKS_PER_SEC > timeOutMs)
-			return false;
+			return false; // Report unsuccess
+		// Wait a bit to reduce load
 		Sleep(5);
 	}
 }
 
 Translator::MessageInfo Listener::GetLastMessageInfo() const {
 	return _info;
+}
+
+bool Listener::Sync(const SerialPort& port) {
+	// Read all existing characters
+	std::string temp = "";
+	if (port.ReadExisting(&temp) != 0)
+		return false;
+	// Reset index
+	_currIndex = 0;
+	return true;
 }
 
 bool Listener::Add(int8_t c) {
@@ -79,15 +89,17 @@ bool Listener::Add(const int8_t* const buffer, DWORD charsToAdd) {
 	return result;
 }
 
-bool Listener::DoListen() {
+bool Listener::DoListen(const SerialPort& port) {
+	// Read a single character
 	int8_t c;
-	if (_port.Read(&c) != 0)
+	if (port.ReadExisting(&c) != 0)
 		return false;
-
+	// Add it to the buffer and check for a new message
 	return Add(c);
 }
 
 bool Listener::IsNewMessageReceived() {
+	// Returns true only once
 	if (!_isNewMessageReceived)
 		return false;
 	_isNewMessageReceived = false;

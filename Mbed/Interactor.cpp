@@ -41,7 +41,7 @@ int Interactor::GetMaxDacValue() const {
 	return maxDacValue;
 }
 
-Translator::MessageInfo Interactor::GetCommandInfo() const {
+Translator::MessageInfo Interactor::GetMessageInfo() const {
 	return _msgInfo;
 }
 

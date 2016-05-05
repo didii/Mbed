@@ -2,75 +2,16 @@
 #include "SerialPort.h"
 #include "Utility.h"
 
-SerialPort::CommStruct::CommStruct() {
-	command = new unsigned char[GetLength()];
-}
+SerialPort::SerialPort()
+	: _handle(INVALID_HANDLE_VALUE) {}
 
-SerialPort::CommStruct::~CommStruct() {
-	delete command;
-}
-
-void SerialPort::CommStruct::Clear() const {
-	command[readWriteIndex] = 0;
-	command[channelIndex] = 0;
-	for (int i = dataIndex; i < dataIndex + dataLength; i++)
-		command[i] = 0;
-}
-
-void SerialPort::CommStruct::SetRead() const {
-	command[readWriteIndex] = 'r';
-}
-
-void SerialPort::CommStruct::SetWrite() const {
-	command[readWriteIndex] = 'w';
-}
-
-void SerialPort::CommStruct::SetChannel(int ch) const {
-	command[channelIndex] = ch;
-}
-
-void SerialPort::CommStruct::SetData(int16_t data) const {
-	for (int i = 0; i < dataLength; i++) {
-		command[i + dataIndex] = (data >> (dataLength - i - 1) * 8) & 0xFF;
-	}
-}
-
-bool SerialPort::CommStruct::IsRead() const {
-	return command[readWriteIndex] == 'r';
-}
-
-bool SerialPort::CommStruct::IsWrite() const {
-	return command[readWriteIndex] == 'w';
-}
-
-int SerialPort::CommStruct::GetChannel() const {
-	return std::atoi((char*)(command + channelIndex));
-}
-
-unsigned char* SerialPort::CommStruct::GetData() const {
-	return command + dataIndex;
-}
-
-int SerialPort::CommStruct::GetLength() const {
-	return 2 + dataLength;
-}
-
-std::string SerialPort::CommStruct::GetReadableCommand() const {
-	std::stringstream ss;
-	ss << command[0] << (int)command[1] << "(" << (int)command[2] * 256 + (int)command[3] << ")";
-	return ss.str();
-}
-
-
-SerialPort::SerialPort() {
-	_handle = INVALID_HANDLE_VALUE;
-}
-
-SerialPort::SerialPort(LPCWSTR portName) {
+SerialPort::SerialPort(LPCWSTR portName)
+	: _handle(INVALID_HANDLE_VALUE) {
 	OpenPort(portName);
 }
 
 SerialPort::~SerialPort() {
+	Close();
 }
 
 DWORD SerialPort::OpenPort(std::wstring portName) {
@@ -92,7 +33,11 @@ DWORD SerialPort::OpenPort(std::wstring portName) {
 	return 0;
 }
 
-DWORD SerialPort::Read(int8_t* c) const {
+bool SerialPort::IsOpen() const {
+	return _handle != INVALID_HANDLE_VALUE;
+}
+
+DWORD SerialPort::ReadExisting(int8_t* c) const {
 	// Get Comm state
 	DWORD errors;
 	COMSTAT stat;
@@ -101,7 +46,7 @@ DWORD SerialPort::Read(int8_t* c) const {
 
 	// If no characters are waiting
 	if (stat.cbInQue == 0)
-		return -1;
+		return -1; // bail
 
 	// Create the overlapped event. Must be closed before exiting to avoid a handle leak.
 	OVERLAPPED osReader = { 0 };
@@ -109,10 +54,12 @@ DWORD SerialPort::Read(int8_t* c) const {
 	if (osReader.hEvent == nullptr)
 		return GetLastError();
 
+	// Issue read for 1 character
 	DWORD charsRead;
 	if (!ReadFile(_handle, c, 1, &charsRead, &osReader))
 		return GetLastError();
 
+	// Report success
 	return 0;
 }
 
@@ -128,10 +75,13 @@ DWORD SerialPort::Read(int8_t** const msg, const DWORD charsToRead, DWORD* const
 	if (osReader.hEvent == nullptr)
 		return GetLastError();
 
+	// Issue read
 	DWORD toRead = min(maxRead, charsToRead);
 	int8_t* buffer = new int8_t[toRead];
 	if (!ReadFile(_handle, buffer, toRead, charsRead, &osReader))
 		return GetLastError();
+
+	// Copy to msg
 	DeepCopy(buffer, toRead, msg);
 
 	return 0;
@@ -149,9 +99,12 @@ DWORD SerialPort::Read(std::string* const msg, const DWORD charsToRead, DWORD* c
 	if (osReader.hEvent == nullptr)
 		return GetLastError();
 
+	// Issue read
 	char buffer[maxRead];
 	if (!ReadFile(_handle, buffer, min(maxRead, charsToRead), charsRead, &osReader))
 		return GetLastError();
+
+	// Copy buffer to string
 	*msg = std::string(buffer, *charsRead);
 
 	return 0;
@@ -181,10 +134,11 @@ DWORD SerialPort::ReadExisting(int8_t** const msg, DWORD* charsRead) const {
 	int8_t* buffer = new int8_t[toRead];
 	if (!ReadFile(_handle, buffer, toRead, charsRead, &osReader))
 		return GetLastError();
+
+	// Copy buffer to msg
 	DeepCopy(buffer, *charsRead, msg);
-
+	// Report success
 	return 0;
-
 }
 
 DWORD SerialPort::ReadExisting(std::string*const msg) const {
@@ -212,8 +166,11 @@ DWORD SerialPort::ReadExisting(std::string*const msg) const {
 	char buffer[maxRead];
 	if (!ReadFile(_handle, buffer, min(maxRead, stat.cbInQue), &charsRead, &osReader))
 		return GetLastError();
+
+	// Copy buffer to msg
 	*msg = std::string(buffer, charsRead);
 	
+	// Report success
 	return 0;
 }
 
@@ -232,6 +189,8 @@ DWORD SerialPort::Write(const int8_t* const msg, const DWORD charsToWrite, DWORD
 	// Issue write
 	if (!WriteFile(_handle, msg, charsToWrite, charsWritten, &osWrite))
 		return GetLastError();
+
+	// Report success
 	return 0;
 }
 
@@ -252,12 +211,18 @@ DWORD SerialPort::Write(std::string msg, DWORD* const charsWritten) const {
 	DWORD charsToWrite = msg.length();
 	if (!WriteFile(_handle, buffer, charsToWrite, charsWritten, &osWrite))
 		return GetLastError();
+
+	// Report success
 	return 0;
 }
 
 DWORD SerialPort::Close() {
+	// Issue close handle
 	if (!CloseHandle(_handle))
 		return GetLastError();
+	// Make sure it is invalidated
+	_handle = INVALID_HANDLE_VALUE;
+	// Report success
 	return 0;
 }
 

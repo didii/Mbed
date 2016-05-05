@@ -23,25 +23,39 @@ private:
 	Translator::MessageInfo _msgInfo;
 
 public:
-
+	// Default constructor
 	Interactor();
 
+	// Ask the questions to the user
 	bool AskQuestions();
+	// Formats the MessageInfo as a string
 	std::string ToString() const;
 
+	// Currenctly unused
 	void SetMaxDacValue(int16_t value);
 	int GetMaxDacValue() const;
-	Translator::MessageInfo GetCommandInfo() const;
+
+	// Get the MessageInfo as inputted by the last quiz
+	Translator::MessageInfo GetMessageInfo() const;
 
 private:
-	// Helper functions
+	// <Deze functies zijn helper functies en worden gebruikt in bovenstaande
+	//  functies voor de makkelijkheid.>
+	// Ask about Read/Write/Option
 	void ReadWriteQuestion();
+	// Ask about channel (not used)
 	void ChannelQuestion();
+	// Ask about voltage (or DAC)
 	void VoltageQuestion();
 
+	// Reset values in _msgInfo
 	void ResetValues();
+	// Set read in _msgInfo
 	void SetRead();
+	// Set write in _msgInfo
 	void SetWrite();
+	// Set channel in _msgInfo (not used)
 	void SetChannel(int ch);
+	// Set data in _msgInfo
 	void SetData(int value);
 };

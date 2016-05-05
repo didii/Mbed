@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "Translator.h"
 
+// Values for the rules
 int    Translator::Rules::StartCharIndex = 0;
 int8_t Translator::Rules::StartChar = '!';
 int    Translator::Rules::CharsToReadIndex = 1;
 int    Translator::Rules::CharsToReadOffset = CharsToReadIndex+1;
-int    Translator::Rules::rwoIndex = 2;
+int    Translator::Rules::CommandIndex = 2;
 int8_t Translator::Rules::ReadChar = 'r';
 int8_t Translator::Rules::WriteChar = 'w';
 int8_t Translator::Rules::OptionChar = 'o';
@@ -14,9 +15,9 @@ int8_t Translator::Rules::ErrorChar = 'e';
 int    Translator::Rules::DataIndex = 3;
 int    Translator::Rules::DataLength = 2;
 
-int    Translator::Rules::ReadCmdSize = rwoIndex + 1;
+int    Translator::Rules::ReadCmdSize = CommandIndex + 1;
 int    Translator::Rules::WriteCmdSize = DataIndex + DataLength;
-int    Translator::Rules::ErrorCmdSize = rwoIndex + 1;
+int    Translator::Rules::ErrorCmdSize = CommandIndex + 1;
 
 
 std::string Translator::MessageInfo::ToString() const {
@@ -25,7 +26,8 @@ std::string Translator::MessageInfo::ToString() const {
 	// Check the command type
 	switch (CommandType) {
 	case NONE:
-		return false; // report unsuccesful
+		// Incorrect command type
+		return "";
 	case READ:
 		result += 'r';
 		result += std::to_string(Channel);
@@ -37,7 +39,7 @@ std::string Translator::MessageInfo::ToString() const {
 		break;
 	case OPTION:
 		// Not implemented yet
-		return false;
+		return "";
 	case ERR:
 		result += 'e';
 		break;
@@ -52,15 +54,17 @@ Translator::Translator() {}
 Translator::~Translator() {}
 
 bool Translator::Translate(MessageInfo info, int8_t** cmd, int* const cmdSize) {
+	// Translation is based on the command type
 	switch (info.CommandType) {
 		case MessageInfo::NONE:
+			// Incorrect command type value
 			return false;
 		case MessageInfo::READ:
 			*cmdSize = Rules::ReadCmdSize;
-			*cmd = new int8_t[Rules::ReadCmdSize+1];
+			*cmd = new int8_t[Rules::ReadCmdSize+1]; //+1 to allow for '\0'
 			(*cmd)[Rules::StartCharIndex] = Rules::StartChar;
 			(*cmd)[Rules::CharsToReadIndex] = Rules::ReadCmdSize-Rules::CharsToReadOffset;
-			(*cmd)[Rules::rwoIndex] = Rules::ReadChar;
+			(*cmd)[Rules::CommandIndex] = Rules::ReadChar;
 			//(*cmd)[Rules::ChannelIndex] = info.Channel;
 			(*cmd)[Rules::ReadCmdSize] = '\0';
 			break;
@@ -69,7 +73,7 @@ bool Translator::Translate(MessageInfo info, int8_t** cmd, int* const cmdSize) {
 			*cmd = new int8_t[Rules::WriteCmdSize+1];
 			(*cmd)[Rules::StartCharIndex] = Rules::StartChar;
 			(*cmd)[Rules::CharsToReadIndex] = Rules::WriteCmdSize - Rules::CharsToReadOffset;
-			(*cmd)[Rules::rwoIndex] = Rules::WriteChar;
+			(*cmd)[Rules::CommandIndex] = Rules::WriteChar;
 			//(*cmd)[Rules::ChannelIndex] = info.Channel;
 			for (int i = 0; i < Rules::DataLength; i++)
 				(*cmd)[Rules::DataIndex + i] = (info.DacValue >> (Rules::DataLength - i - 1) * 8) & 0xFF;
@@ -83,7 +87,7 @@ bool Translator::Translate(MessageInfo info, int8_t** cmd, int* const cmdSize) {
 			*cmd = new int8_t[Rules::ErrorCmdSize + 1];
 			(*cmd)[Rules::StartCharIndex] = Rules::StartChar;
 			(*cmd)[Rules::CharsToReadIndex] = Rules::ErrorCmdSize - Rules::CharsToReadOffset;
-			(*cmd)[Rules::rwoIndex] = Rules::ErrorChar;
+			(*cmd)[Rules::CommandIndex] = Rules::ErrorChar;
 			(*cmd)[Rules::ErrorCmdSize] = '\0';
 			break;
 		default:
@@ -96,15 +100,15 @@ bool Translator::Translate(MessageInfo info, int8_t** cmd, int* const cmdSize) {
 void Translator::Translate(const int8_t* const cmd, int cmdSize, MessageInfo* const info) {
 	// Check starting character
 	if (cmd[Rules::StartCharIndex] != Rules::StartChar)
-		throw TranslatorStartCharMissingException();
+		throw TranslatorStartCharMissingException(cmd,cmdSize);
 	// Check length of command
 	if (cmd[Rules::CharsToReadIndex] + Rules::CharsToReadOffset > cmdSize)
-		throw TranslatorMessageTooShortException();
+		throw TranslatorMessageTooShortException(cmd, cmdSize);
 	if (cmd[Rules::CharsToReadIndex] + Rules::CharsToReadOffset < cmdSize)
-		throw TranslatorMessageTooLongException();
+		throw TranslatorMessageTooLongException(cmd, cmdSize);
 
 	// Populate info
-	switch (cmd[Rules::rwoIndex]) {
+	switch (cmd[Rules::CommandIndex]) {
 	case 'r':
 		info->CommandType = MessageInfo::READ;
 		//info->Channel = cmd[Rules::ChannelIndex];
@@ -122,17 +126,6 @@ void Translator::Translate(const int8_t* const cmd, int cmdSize, MessageInfo* co
 		info->CommandType = MessageInfo::ERR;
 		break;
 	default:
-		throw TranslatorException("Incorrect command type");
+		throw TranslatorIncorrectCommandException(cmd, cmdSize);
 	}
 }
-
-
-
-TranslatorException::TranslatorException()
-	: std::exception() {}
-
-TranslatorException::TranslatorException(const char* const msg)
-	: std::exception(msg) {}
-
-TranslatorException::TranslatorException(const char* const msg, int value)
-	: std::exception(msg, value) {}
