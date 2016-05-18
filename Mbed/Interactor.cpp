@@ -14,6 +14,10 @@ bool Interactor::AskQuestions() {
 			case ReadWrite:
 				ReadWriteQuestion();
 				break;
+			case PortInfo:
+				_portInfo = true;
+				return true;
+				break;
 			case Channel:
 				ChannelQuestion();
 				break;
@@ -41,13 +45,17 @@ int Interactor::GetMaxDacValue() const {
 	return maxDacValue;
 }
 
+bool Interactor::NeedPortInfo() const {
+	return _portInfo;
+}
+
 Translator::MessageInfo Interactor::GetMessageInfo() const {
 	return _msgInfo;
 }
 
 void Interactor::ReadWriteQuestion() {
 	// Ask the user whether they want to read or write data
-	std::cout << "Read or write (r/w)? ";
+	std::cout << "Read/write/info (r/w/i)? ";
 	char in_char;
 	std::cin >> in_char;
 
@@ -61,6 +69,9 @@ void Interactor::ReadWriteQuestion() {
 		SetWrite();
 		_state = Channel;
 		break;
+	case 'i':
+		_state = PortInfo;
+		break;
 	case 'q':
 		std::cout << "Quitting...\n";
 		_state = End;
@@ -71,6 +82,15 @@ void Interactor::ReadWriteQuestion() {
 }
 
 void Interactor::ChannelQuestion() {
+	//skip
+	if (_msgInfo.CommandType == Translator::MessageInfo::READ) {
+		SetData(0);
+		_state = End;
+	}
+	else if (_msgInfo.CommandType == Translator::MessageInfo::WRITE)
+		_state = Voltage;
+	return;
+
 	// Ask the user from which channel to read/write
 	switch (_msgInfo.CommandType) {
 		case Translator::MessageInfo::NONE:
@@ -134,6 +154,7 @@ void Interactor::VoltageQuestion() {
 void Interactor::ResetValues() {
 	// Reset all values to their original ones
 	_state = ReadWrite;
+	_portInfo = false;
 	_msgInfo.CommandType = Translator::MessageInfo::NONE;
 	_msgInfo.Channel = -1;
 }

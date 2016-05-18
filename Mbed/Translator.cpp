@@ -31,6 +31,9 @@ std::string Translator::MessageInfo::ToString() const {
 	case READ:
 		result += 'r';
 		result += std::to_string(Channel);
+		result += '(';
+		result += std::to_string(DacValue);
+		result += ')';
 		break;
 	case WRITE:
 		result += 'w';

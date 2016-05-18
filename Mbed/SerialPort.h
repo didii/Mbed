@@ -15,7 +15,7 @@ public:
 	// Default constructor
 	SerialPort();
 	// Constructor which immediately opens a port
-	SerialPort(LPCWSTR portName);
+	SerialPort(std::wstring portName);
 	// Default destructor
 	~SerialPort();
 
@@ -32,10 +32,12 @@ public:
 	DWORD Read(std::string* const msg, const DWORD charsToRead) const;
 	// Read the given number of characters and store it in a string
 	DWORD Read(std::string* const msg, const DWORD charsToRead, DWORD* const charsRead) const;
+	// Amount of characters available to read
+	DWORD CharactersWaiting() const;
 	// Read a single character if it is available
 	DWORD ReadExisting(int8_t* c) const;
 	// Read all characters from the input buffer (max size = maxRead)
-	DWORD ReadExisting(int8_t** const buffer, DWORD* charsRead) const;
+	DWORD ReadExisting(int8_t* const buffer, DWORD* charsRead) const;
 	// Read all characters from the input buffer (max size = maxRead)
 	DWORD ReadExisting(std::string* const buffer) const;
 

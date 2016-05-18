@@ -5,7 +5,7 @@
 SerialPort::SerialPort()
 	: _handle(INVALID_HANDLE_VALUE) {}
 
-SerialPort::SerialPort(LPCWSTR portName)
+SerialPort::SerialPort(std::wstring portName)
 	: _handle(INVALID_HANDLE_VALUE) {
 	OpenPort(portName);
 }
@@ -82,7 +82,7 @@ DWORD SerialPort::Read(int8_t** const msg, const DWORD charsToRead, DWORD* const
 		return GetLastError();
 
 	// Copy to msg
-	DeepCopy(buffer, toRead, msg);
+	DeepCopy(buffer, toRead, *msg);
 
 	return 0;
 }
@@ -110,7 +110,18 @@ DWORD SerialPort::Read(std::string* const msg, const DWORD charsToRead, DWORD* c
 	return 0;
 }
 
-DWORD SerialPort::ReadExisting(int8_t** const msg, DWORD* charsRead) const {
+DWORD SerialPort::CharactersWaiting() const {
+	// Get Comm state
+	DWORD errors;
+	COMSTAT stat;
+	if (!ClearCommError(_handle, &errors, &stat))
+		return GetLastError();
+
+	// If no characters are waiting
+	return stat.cbInQue;
+}
+
+DWORD SerialPort::ReadExisting(int8_t* const msg, DWORD* charsRead) const {
 	// Get Comm state
 	DWORD errors;
 	COMSTAT stat;
@@ -187,8 +198,13 @@ DWORD SerialPort::Write(const int8_t* const msg, const DWORD charsToWrite, DWORD
 		return GetLastError();
 
 	// Issue write
-	if (!WriteFile(_handle, msg, charsToWrite, charsWritten, &osWrite))
-		return GetLastError();
+	for (int i = 0; i < charsToWrite; i++) {
+		WriteFile(_handle, msg + i, 1, charsWritten, &osWrite);
+		Sleep(50);
+	}
+
+	//if (WriteFile(_handle, msg, charsToWrite, charsWritten, &osWrite) != 0)
+	//	return GetLastError();
 
 	// Report success
 	return 0;

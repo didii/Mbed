@@ -18,23 +18,48 @@
 // Testing the Translator class
 //#define TRANSLATOR_TEST
 
+
+bool Retry(bool* const retry);
+
 int main() {
 
 #ifdef PROGRAM
+	std::wstring portName = L"COM3";
 	// Create connection to the COM _port
-	SerialPort port(L"COM3");
+	SerialPort port(portName);
+	if (!port.IsOpen()) {
+		std::cout << "Error: could not connect to " << portName.c_str() << std::endl;
+		return 0;
+	}
 	// Create the question master
 	Interactor interactor;
 	// Create a listener
 	Listener listener;
 
 	std::cout << "Connection established\n";
-
+	{
+		std::string buffer;
+		port.ReadExisting(&buffer);
+		std::cout << buffer << std::endl;
+		
+	}
 	bool running = true;
 	while (running) {
 		// Start asking questions
 		if (!interactor.AskQuestions())
 			break;
+
+		if (interactor.NeedPortInfo()) {
+			std::cout << "Waiting characters: " << port.CharactersWaiting() << std::endl;
+			if (port.CharactersWaiting() > 0) {
+				std::cout << "Characters: ";
+				std::string buffer;
+				port.ReadExisting(&buffer);
+				std::cout << buffer << "\n";
+			}
+			std::cout << std::endl;
+			continue;
+		}
 
 		std::cout << "Sending: " << interactor.ToString() << std::endl;
 
@@ -43,21 +68,50 @@ int main() {
 		int rawMsgSize;
 		Translator::Translate(interactor.GetMessageInfo(), &rawMsg, &rawMsgSize);
 
-		// Send the message
-		port.Write(rawMsg, rawMsgSize);
+		bool retry = false;
+		do { // Send the message
+			if (port.Write(rawMsg, rawMsgSize) != 0) {
+				std::cout << "An error occured while sending. ";
+				if (!Retry(&retry))
+					running = false;
+				continue;
+			}
+			//Sleep(200);
+			//int8_t buffer[258];
+			//DWORD size;
+			////std::string buffer;
+			//port.ReadExisting(buffer, &size);
+			//for (int i = 0; i < size; i++)
+			//	std::cout << "'" << buffer[i] << "' (" << (int)buffer[i] << ")" << "\n";
+			//std::cout << "\n";
+			//break;
 
-		std::cout << "Message sent.\nWaiting for answer...\n";
 
-		// Wait for answer
-		if (listener.Listen(port, 5000)) {
-			auto msg = listener.GetLastMessageInfo();
-			std::cout << "Message received!\n";
-		} else {
-			std::cout << "Got no message back :(\n";
+			std::cout << "Message sent.\nWaiting for answer...\n";
+
+			// Wait for answer
+			if (listener.Listen(port, 1)) {
+				// An answer was received
+				auto msg = listener.GetLastMessageInfo();
+				std::cout << "Answer: " << listener.GetLastMessageInfo().ToString() << std::endl;
+			} else {
+				bool correctInput;
+				std::cout << "Got no message back. ";
+				if (!Retry(&retry))
+					running = false;
+				continue;
+			}
+		} while (retry);
+		if (port.CharactersWaiting() > 0) {
+			std::cout << "Reading sent messages:\n";
+			std::string buffer;
+			port.ReadExisting(&buffer);
+			std::cout << buffer << std::endl;
 		}
+		std::cout << std::endl;
 	}
 
-	std::cout << "Terminating program...";
+	std::cout << "Terminating program...\n";
 	return 0;
 #endif
 
@@ -152,3 +206,30 @@ int main() {
 	return 0;
 }
 
+bool Retry(bool* const retry) {
+	while (true) {
+		// No answer in the timeout
+		std::cout << "Retry? (y/n) ";
+		char in;
+		std::cin >> in;
+		if (std::cin.fail()) {
+			std::cout << "Incorrect input...\n";
+			continue;
+		}
+		switch (in) {
+		case 'y':
+			*retry = true;
+			return true;
+		case 'n':
+			*retry = false;
+			return true;
+		case 'q':
+			*retry = false;
+			return false;
+		default:
+			std::cout << "Incorrect input...\n";
+			break;
+		}
+	}
+
+}

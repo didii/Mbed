@@ -45,6 +45,9 @@
     <ClInclude Include="Listener.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Communicator.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

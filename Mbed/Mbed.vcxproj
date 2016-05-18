@@ -146,6 +146,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Communicator.h" />
     <ClInclude Include="Listener.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="Interactor.h" />

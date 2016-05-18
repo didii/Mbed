@@ -14,7 +14,7 @@ private:
 
 	// <De grootte is 255+2 omdat
 	//  255 = grootste getal dat in de message kan staan
-	//  2 = grootte van de prefix
+	//  2 = grootte van de prefix>
 	// Maximum size of the buffer
 	static const int maxBufferSize = 255+2;
 	// Grootte van de buffer, uitgelezen karakters van de poort worden hier opgeslagen

@@ -8,6 +8,7 @@ private:
 	// The different question states
 	enum EState {
 		ReadWrite,
+		PortInfo,
 		Channel,
 		Voltage,
 		Option,
@@ -21,6 +22,8 @@ private:
 
 	// Contains message info
 	Translator::MessageInfo _msgInfo;
+	bool _portInfo;
+
 
 public:
 	// Default constructor
@@ -35,6 +38,8 @@ public:
 	void SetMaxDacValue(int16_t value);
 	int GetMaxDacValue() const;
 
+	bool NeedPortInfo() const;
+
 	// Get the MessageInfo as inputted by the last quiz
 	Translator::MessageInfo GetMessageInfo() const;
 
@@ -43,6 +48,8 @@ private:
 	//  functies voor de makkelijkheid.>
 	// Ask about Read/Write/Option
 	void ReadWriteQuestion();
+	// Ask what port info to display
+	void PortInfoQuestion();
 	// Ask about channel (not used)
 	void ChannelQuestion();
 	// Ask about voltage (or DAC)

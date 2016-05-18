@@ -18,7 +18,7 @@ bool Listener::Listen(const SerialPort& port) {
 	}
 }
 
-bool Listener::Listen(const SerialPort& port, clock_t timeOutMs) {
+bool Listener::Listen(const SerialPort& port, clock_t timeOutS) {
 	// Save current time
 	clock_t startTime = clock();
 	// Start infinte loop
@@ -27,8 +27,9 @@ bool Listener::Listen(const SerialPort& port, clock_t timeOutMs) {
 		if (DoListen(port))
 			return true; // New message was received
 		// Check if time-out was overdue
-		if ((clock() - startTime) / CLOCKS_PER_SEC > timeOutMs)
+		if ((clock() - startTime) / CLOCKS_PER_SEC > timeOutS) {
 			return false; // Report unsuccess
+		}
 		// Wait a bit to reduce load
 		Sleep(5);
 	}
@@ -68,6 +69,7 @@ bool Listener::Add(int8_t c) {
 	}
 	catch (TranslatorMessageTooShortException) {
 		// Message too short = incomplete, wait for other chars
+		_currIndex++;
 		return false;
 	}
 	// Translation succesful, copy to _info
@@ -94,6 +96,7 @@ bool Listener::DoListen(const SerialPort& port) {
 	int8_t c;
 	if (port.ReadExisting(&c) != 0)
 		return false;
+	//std::cout << "Character read: '" << c << "' (" << (int)c << ")" << std::endl;
 	// Add it to the buffer and check for a new message
 	return Add(c);
 }
